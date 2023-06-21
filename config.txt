@@ -1,0 +1,3 @@
+========Config========
+ghidraPath=/usr/share/ghidra
+openAIApiKey=
