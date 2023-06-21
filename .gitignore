@@ -1,0 +1,5 @@
+# Ignore local config
+config.txt
+*.txt
+*.c
+*.exe
