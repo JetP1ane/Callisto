@@ -1,0 +1,78 @@
+rules:
+  - id: raptor-integer-wraparound
+    metadata:
+      author: Marco Ivaldi <raptor@0xdeadbeef.info>
+      references:
+        - https://cwe.mitre.org/data/definitions/190
+        - https://cwe.mitre.org/data/definitions/128
+        - https://cwe.mitre.org/data/definitions/131
+        - https://www.sei.cmu.edu/downloads/sei-cert-c-coding-standard-2016-v01.pdf
+        - http://www.phrack.org/issues/60/10.html#article
+        - https://docs.microsoft.com/en-us/cpp/sanitizers/asan-error-examples
+        - https://dustri.org/b/playing-with-weggli.html
+      confidence: MEDIUM
+      # NOTE: only multiplication with two operands is covered; addition and other 
+      # arithmetic operations should also be considered, as well as any operation
+      # with more than two operands.
+      # NOTE: some allocation functions such as kmalloc() are not covered.
+    message: >-
+      The software performs a calculation that can produce an integer
+      overflow or wraparound, when the logic assumes that the resulting
+      value will always be larger than the original value. This can
+      introduce other weaknesses when the calculation is used for resource
+      management or execution control.
+      An integer overflow or wraparound occurs when an integer value is
+      incremented to a value that is too large to store in the associated
+      representation. When this occurs, the value may wrap to become a very
+      small or negative number. While this may be intended behavior in
+      circumstances that rely on wrapping, it can have security
+      consequences if the wrap is unexpected. This is especially the case
+      if the integer overflow can be triggered using user-supplied inputs.
+      This becomes security-critical when the result is used to control
+      looping, make a security decision, or determine the offset or size in
+      behaviors such as memory allocation, copying, concatenation, etc.
+    severity: WARNING
+    languages:
+      - c
+      - cpp
+    pattern-either:
+      # malloc, valloc
+      - patterns:
+        - pattern: $FUN($X * $Y)
+        - metavariable-pattern:
+            metavariable: $FUN
+            pattern-either:
+              - pattern: malloc
+              - pattern: valloc
+      - patterns:
+        - pattern: $FUN($N)
+        - pattern-inside: |
+            $N = $X * $Y;
+            ...
+        - metavariable-pattern:
+            metavariable: $FUN
+            pattern-either:
+              - pattern: malloc
+              - pattern: valloc
+      # calloc, realloc, reallocf, aligned_alloc
+      - patterns:
+        - pattern: $FUN($ARG1, $X * $Y)
+        - metavariable-pattern:
+            metavariable: $FUN
+            pattern-either:
+              - pattern: calloc
+              - pattern: realloc
+              - pattern: reallocf
+              - pattern: aligned_alloc
+      - patterns:
+        - pattern: $FUN($ARG1, $N)
+        - pattern-inside: |
+            $N = $X * $Y;
+            ...
+        - metavariable-pattern:
+            metavariable: $FUN
+            pattern-either:
+              - pattern: calloc
+              - pattern: realloc
+              - pattern: reallocf
+              - pattern: aligned_alloc

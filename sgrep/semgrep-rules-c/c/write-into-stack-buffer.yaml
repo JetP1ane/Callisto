@@ -1,0 +1,143 @@
+rules:
+  - id: raptor-write-into-stack-buffer
+    metadata:
+      author: Marco Ivaldi <raptor@0xdeadbeef.info>
+      references:
+        - https://cwe.mitre.org/data/definitions/121
+        - https://github.com/googleprojectzero/weggli
+      confidence: MEDIUM
+      # NOTE: some functions (e.g., scanf family) and some other ways to
+      # write into a stack buffer are not covered.
+      # NOTE: static variables matching apparently is not supported by Semgrep.
+    message: >-
+      The software directly writes into a stack buffer. This might lead to
+      a stack-based buffer overflow.
+    severity: WARNING
+    languages:
+      - c
+      - cpp
+    pattern-either:
+      # buffer in 1st arg (buffer to buffer copy functions)
+      - patterns:
+        - pattern: $FUN($BUF, ...)
+        - pattern-inside: |
+            $TYPE $BUF[$SIZE];
+            ...
+            $FUN($BUF, ...);
+        - pattern-not: $FUN($BUF, "...", ...)
+        - metavariable-pattern:
+            metavariable: $FUN
+            pattern-either:
+              # strcpy
+              - pattern: strcpy
+              - pattern: strncpy
+              - pattern: stpcpy
+              - pattern: stpncpy
+              - pattern: strlcpy
+              - pattern: wcscpy
+              - pattern: wcsncpy
+              - pattern: wcpcpy
+              - pattern: wcpncpy
+              - pattern: wcslcpy
+              # strcat
+              - pattern: strcat
+              - pattern: strncat
+              - pattern: strlcat
+              - pattern: wcscat
+              - pattern: wcsncat
+              - pattern: wcslcat
+              # memcpy/memset
+              - pattern: memcpy
+              - pattern: memccpy
+              - pattern: memmove
+              - pattern: memset
+              - pattern: wmemcpy
+              - pattern: wmemmove
+              - pattern: wmemset
+      # buffer in 1st arg (sprintf functions)
+      - patterns:
+        - pattern: $FUN($BUF, $FMT, ...)
+        - pattern-inside: |
+            $TYPE $BUF[$SIZE];
+            ...
+            $FUN($BUF, $FMT, ...);
+        - metavariable-regex:
+            metavariable: $FMT
+            # some format string modifiers are not handled
+            regex: '(".*%l?s.*"|".*%S.*"|[a-zA-Z_][a-zA-Z0-9_]*)'
+        - metavariable-pattern:
+            metavariable: $FUN
+            pattern-either:
+              # sprintf
+              - pattern: sprintf
+              - pattern: vsprintf
+      # buffer in 1st arg (snprintf functions)
+      - patterns:
+        - pattern: $FUN($BUF, $LEN, $FMT, ...)
+        - pattern-inside: |
+            $TYPE $BUF[$SIZE];
+            ...
+            $FUN($BUF, $LEN, $FMT, ...);
+        - metavariable-regex:
+            metavariable: $FMT
+            # some format string modifiers are not handled
+            regex: '(".*%l?s.*"|".*%S.*"|[a-zA-Z_][a-zA-Z0-9_]*)'
+        - metavariable-pattern:
+            metavariable: $FUN
+            pattern-either:
+              # sprintf
+              - pattern: snprintf
+              - pattern: vsnprintf
+      # buffer in 1st arg (other functions)
+      - patterns:
+        - pattern: $FUN($BUF, ...)
+        - pattern-inside: |
+            $TYPE $BUF[$SIZE];
+            ...
+            $FUN($BUF, ...);
+        - metavariable-pattern:
+            metavariable: $FUN
+            pattern-either:
+              # get
+              - pattern: gets
+              - pattern: fgets
+              - pattern: getwd
+              - pattern: getcwd
+              # stdio
+              - pattern: fread
+      # buffer in 2nd arg (buffer to buffer copy functions)
+      - patterns:
+        - pattern: $FUN($ARG1, $BUF, ...)
+        - pattern-inside: |
+            $TYPE $BUF[$SIZE];
+            ...
+            $FUN($ARG1, $BUF, ...);
+        - pattern-not: $FUN("...", $BUF, ...)
+        - metavariable-pattern:
+            metavariable: $FUN
+            pattern-either:
+              # bcopy
+              - pattern: bcopy
+      # buffer in 2nd arg (other functions)
+      - patterns:
+        - pattern: $FUN($ARG1, $BUF, ...)
+        - pattern-inside: |
+            $TYPE $BUF[$SIZE];
+            ...
+            $FUN($ARG1, $BUF, ...);
+        - metavariable-pattern:
+            metavariable: $FUN
+            pattern-either:
+              # read
+              - pattern: read
+              - pattern: pread
+              # recv
+              - pattern: recv
+              - pattern: recvfrom
+      # assignment (too many false positives)
+        # - patterns:
+          # - pattern: $BUF[$POS] = $EXPR;
+          # - pattern-inside: |
+                # $TYPE $BUF[$SIZE];
+                # ...
+                # $BUF[$POS] = $EXPR;

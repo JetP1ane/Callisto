@@ -1,0 +1,46 @@
+rules:
+  - id: raptor-off-by-one
+    metadata:
+      author: Marco Ivaldi <raptor@0xdeadbeef.info>
+      references:
+        - https://cwe.mitre.org/data/definitions/193
+        - https://cwe.mitre.org/data/definitions/787
+        - https://g.co/kgs/PCHQjJ
+        - https://github.com/struct/mms
+      confidence: LOW
+      # NOTE: heap-allocated buffers and some functions are not covered.
+      # NOTE: memcpy(dst + 1, p, len) and similar scenarios are not covered.
+    message: >-
+      The software calculates or uses an incorrect maximum or minimum value
+      that is 1 more, or 1 less, than the correct value.
+    severity: INFO
+    languages:
+      - c
+      - cpp
+    pattern-either:
+      # array access
+      - pattern: $BUF[sizeof($BUF)] = $EXPR
+      - patterns:
+        - pattern: $BUF[$SIZE] = $EXPR
+        - pattern-inside: |
+            $TYPE $BUF[$SIZE];
+            ...
+            $BUF[$SIZE] = $EXPR;
+      # suspicious loops
+      - pattern: for (<... $I = 0 ...>; <... $I <= $SIZE ...>; <... $I++ ...>) ...
+      # <... $TYPE $I = 0 ...> is not supported by Semgrep
+      - pattern: for ($TYPE $I = 0; <... $I <= $SIZE ...>; <... $I++ ...>) ...
+      - pattern: while (<... $I <= $SIZE ...>) ...
+      - pattern: do ... while (<... $I <= $SIZE ...>);
+      # strlen vs. sizeof
+      - pattern: strlen($SRC) > sizeof($DST)
+      - pattern: strlen($SRC) <= sizeof($DST)
+      - pattern: sizeof($DST) < strlen($SRC)
+      - pattern: sizeof($DST) >= strlen($SRC)
+      # potential strncat misuse
+      - patterns:
+        - pattern: strncat($DST, $SRC, $LEN)
+        - metavariable-pattern:
+            metavariable: $LEN
+            patterns:
+              - pattern-not: $VAL - 1

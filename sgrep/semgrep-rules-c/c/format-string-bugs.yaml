@@ -1,0 +1,100 @@
+rules:
+  - id: raptor-format-string-bugs
+    metadata:
+      author: Marco Ivaldi <raptor@0xdeadbeef.info>
+      references:
+        - https://cwe.mitre.org/data/definitions/134
+        - https://julianor.tripod.com/bc/formatstring-1.2.pdf
+        - http://phrack.org/issues/70/13.html#article
+        - https://g.co/kgs/PCHQjJ
+        - https://www.sei.cmu.edu/downloads/sei-cert-c-coding-standard-2016-v01.pdf
+      confidence: MEDIUM
+      # NOTE: generic va_list matching for custom functions is not covered.
+    message: >-
+      The software uses a function that accepts a format string as an
+      argument, but the format string originates from an external source.
+      When an attacker can modify an externally-controlled format string,
+      this can lead to buffer overflows, denial of service, or data
+      representation problems.
+      It should be noted that in some circumstances, such as
+      internationalization, the set of format strings is externally
+      controlled by design. If the source of these format strings is
+      trusted (e.g. only contained in library files that are only
+      modifiable by the system administrator), then the external control
+      might not itself pose a vulnerability.
+    severity: ERROR
+    languages:
+      - c
+      - cpp
+    pattern-either:
+      # format string in 1st arg
+      - patterns:
+        - pattern-either:
+          # printf family
+          - pattern: printf(...)
+          - pattern: vprintf(...)
+          - pattern: wprintf(...)
+          - pattern: vwprintf(...)
+          - pattern: vcprintf(...)
+          - pattern: vcwprintf(...)
+          - pattern: vscprintf(...)
+          - pattern: vscwprintf(...)
+          - pattern: printk(...)
+          # scanf family
+          - pattern: scanf(...)
+          - pattern: vscanf(...)
+          - pattern: wscanf(...)
+          - pattern: vwscanf(...)
+          # err/warn family
+          - pattern: warn(...)
+          - pattern: vwarn(...)
+          - pattern: warnx(...)
+          - pattern: vwarnx(...)
+        - pattern-not: $FUN("...", ...)
+      # format string in 2nd arg
+      - patterns:
+        - pattern-either:
+          # printf family
+          - pattern: fprintf(...)
+          - pattern: vfprintf(...)
+          - pattern: fwprintf(...)
+          - pattern: vfwprintf(...)
+          - pattern: sprintf(...)
+          - pattern: vsprintf(...)
+          - pattern: asprintf(...)
+          - pattern: vasprintf(...)
+          - pattern: dprintf(...)
+          - pattern: vdprintf(...)
+          - pattern: wsprintf(...)
+          # scanf family
+          - pattern: fscanf(...)
+          - pattern: vfscanf(...)
+          - pattern: fwscanf(...)
+          - pattern: vfwscanf(...)
+          - pattern: sscanf(...)
+          - pattern: vsscanf(...)
+          - pattern: swscanf(...)
+          - pattern: vswscanf(...)
+          # syslog family
+          - pattern: syslog(...)
+          - pattern: vsyslog(...)
+          # err/warn family
+          - pattern: err(...)
+          - pattern: verr(...)
+          - pattern: errx(...)
+          - pattern: verrx(...)
+          - pattern: warnc(...)
+          - pattern: vwarnc(...)
+        - pattern-not: $FUN($ARG1, "...", ...)
+      # format string in 3rd arg
+      - patterns:
+        - pattern-either:
+          # printf family
+          - pattern: snprintf(...)
+          - pattern: vsnprintf(...)
+          - pattern: swprintf(...)
+          - pattern: vswprintf(...)
+          # err/warn family
+          - pattern: errc(...)
+          - pattern: verrc(...)
+        - pattern-not: $FUN($ARG1, $ARG2, "...", ...)
