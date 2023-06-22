@@ -12,8 +12,8 @@ decompinterface.openProgram(program)
 functions = program.getFunctionManager().getFunctions(True)
 monitor = ConsoleTaskMonitor()
 
-c = open("output.c", "w")
-f = open("callGraph.txt", "w")
+c = open("output.c", "w+")
+f = open("callGraph.txt", "w+")
 
 for function in list(functions):
     callingFuncs = function.getCalledFunctions(monitor)
