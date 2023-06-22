@@ -15,7 +15,7 @@ REVERSE = "\033[;7m"
 class Semgrep():
 
     def __init__(self):
-        self.cmd = "semgrep --config=sgrep/semgrep-rules/c semgrep.c"
+        self.cmd = "semgrep --config=sgrep/semgrep-rules-c/c semgrep.c"
 
     def analyzeC(self, function):
         # Write function to file for analysis
@@ -25,7 +25,7 @@ class Semgrep():
 
         resultsConcat = ""
         resultsLineNum = []
-        sGrepResults = subprocess.run(["semgrep", "--config=sgrep/semgrep-rules/c", "--json", "sgrep/semgrep.c"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        sGrepResults = subprocess.run(["semgrep", "--config=sgrep/semgrep-rules-c/c", "--json", "sgrep/semgrep.c"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
         sGrepResults = sGrepResults.stdout.decode('utf-8')
         sGrepResults = json.loads(sGrepResults)
 
