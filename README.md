@@ -17,7 +17,7 @@ I owe Marco Ivaldi [@0xdea](https://github.com/0xdea) a huge thanks for his publ
 - [Ghidra](https://github.com/NationalSecurityAgency/ghidra)
 - Semgrep - `pip install semgrep`
 - requirements.txt - `pip install -r requirements.txt`
-- Ensure the correct path to your Ghidra directory is set in the config.txt file
+- Ensure the correct path to your Ghidra directory is set in the `config.txt` file
 
 **To Run:**
 `python callisto.py -b <path_to_binary> -ai -o <path_to_output_file>`
