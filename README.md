@@ -26,6 +26,8 @@ I owe Marco Ivaldi [@0xdea](https://github.com/0xdea) a huge thanks for his publ
 - `-ai` and `-o` are optional parameters
 -  `-all` will run all functions through OpenAI Analysis, regardless of any Semgrep findings. This flag requires the prerequisite `-ai` flag
 - Ex. `python callisto.py -b vulnProgram.exe -ai -o results.txt`
+- Ex. (Running all functions through AI Analysis):\
+  `python callisto.py -b vulnProgram.exe -ai -all -o results.txt`
 
 **Program Output Example:**\
 ![](callisto.png)
