@@ -24,6 +24,7 @@ I owe Marco Ivaldi [@0xdea](https://github.com/0xdea) a huge thanks for his publ
 - `-ai` => enable OpenAI GPT-3.5-Turbo Analysis. Will require placing a valid OpenAI API key in the config.txt file
 - `-o` => define an output file, if you want to save the output
 - `-ai` and `-o` are optional parameters
+-  `-all` will run all functions through OpenAI Analysis, regardless of any Semgrep findings. This flag requires the prerequisite `-ai` flag
 - Ex. `python callisto.py -b vulnProgram.exe -ai -o results.txt`
 
 **Program Output Example:**\
