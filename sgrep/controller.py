@@ -2,15 +2,17 @@ import json
 import subprocess
 
 
-RED   = "\033[1;31m"
-YELLOW = "\033[1;33m"
-BLUE  = "\033[1;34m"
-CYAN  = "\033[1;36m"
-WHITE  = "\033[1;37m"
-GREEN = "\033[0;32m"
-RESET = "\033[0;0m"
-BOLD    = "\033[;1m"
-REVERSE = "\033[;7m"
+Colors = {
+    "RED": "\033[1;31m",
+    "YELLOW": "\033[1;33m",
+    "BLUE": "\033[1;34m",
+    "CYAN": "\033[1;36m",
+    "WHITE": "\033[1;37m",
+    "GREEN": "\033[0;32m",
+    "RESET": "\033[0;0m",
+    "BOLD":"\033[;1m",
+    "REVERSE": "\033[;7m",
+}
 
 class Semgrep():
 
@@ -35,11 +37,11 @@ class Semgrep():
             lineNumber = sGrepResults["results"][tick]["start"]["line"]
             resultsLineNum.append(lineNumber)
             if tick != 0:
-                resultsConcat = resultsConcat + "\n\n" + GREEN + "Finding: " + RESET + vulnMessage + \
-                    "\n" + WHITE + "Line: " + RESET + RED + str(lineNumber) + RESET
+                resultsConcat = resultsConcat + "\n\n" + Colors['GREEN'] + "Finding: " + Colors['RESET'] + vulnMessage + \
+                    "\n" + Colors['WHITE'] + "Line: " + Colors['RESET'] + Colors['RED'] + str(lineNumber) + Colors['RESET']
             else:
-                resultsConcat = resultsConcat + GREEN + "Finding: " + RESET + vulnMessage + \
-                    "\n" + WHITE + "Line: " + RESET + RED + str(lineNumber) + RESET
+                resultsConcat = resultsConcat + Colors['GREEN'] + "Finding: " + Colors['RESET'] + vulnMessage + \
+                    "\n" + Colors['WHITE'] + "Line: " + Colors['RESET'] + Colors['RED'] + str(lineNumber) + Colors['RESET']
             tick+=1
 
         return(resultsConcat, resultsLineNum)

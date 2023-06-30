@@ -8,15 +8,17 @@ import openAI.controller as openAI
 from prettytable import PrettyTable, ALL
 
 
-RED   = "\033[1;31m"
-YELLOW = "\033[1;33m"
-BLUE  = "\033[1;34m"
-CYAN  = "\033[1;36m"
-WHITE  = "\033[1;37m"
-GREEN = "\033[0;32m"
-RESET = "\033[0;0m"
-BOLD    = "\033[;1m"
-REVERSE = "\033[;7m"
+Colors = {
+    "RED": "\033[1;31m",
+    "YELLOW": "\033[1;33m",
+    "BLUE": "\033[1;34m",
+    "CYAN": "\033[1;36m",
+    "WHITE": "\033[1;37m",
+    "GREEN": "\033[0;32m",
+    "RESET": "\033[0;0m",
+    "BOLD":"\033[;1m",
+    "REVERSE": "\033[;7m",
+}
 
 
 class Callisto():
@@ -37,6 +39,7 @@ class Callisto():
         self.configPath = "config.txt"
         self.outputFile = None
         self.aiToggle = False
+        self.allToggle = False
         self.apiKey = None
 
         self.config()   # Parse config file
@@ -50,14 +53,14 @@ class Callisto():
         self.argHandler(sys.argv)
 
         table = PrettyTable()
-        table.field_names = [GREEN + 'Function' + YELLOW, BLUE + 'Semgrep Analysis' + YELLOW, CYAN + 'GPT Analysis' + RESET]
+        table.field_names = [Colors['GREEN'] + 'Function' + Colors['YELLOW'], Colors['BLUE'] + 'Semgrep Analysis' + Colors['YELLOW'], Colors['CYAN'] + 'GPT Analysis' + Colors['RESET']]
         table.align = 'l'  # Left align the text in column 1
         table.max_width = 60
         table.hrules = ALL
 
         self.decompiler() # Run Ghidra Decompiler & Friends
         
-        print(YELLOW + "[+] Starting Analysis.." + RESET)
+        print(Colors['YELLOW'] + "[+] Starting Analysis.." + Colors['RESET'])
         # Extract functions from file
         f = open("output.c", "r")
         contents = f.read()
@@ -65,6 +68,7 @@ class Callisto():
 
         aiAnalysis = ""
         semgrepAnalysis = ""
+        tick = 0
         for function in functions:
             functionParsed = function.split("\n")
             semgrepAnalysis, semgrepLineNumbs = self.semgrep(function)  # Semgrep Analysis
@@ -75,29 +79,51 @@ class Callisto():
             for item in functionParsed:
                 if lineCounter > 1:
                     if lineCounter in semgrepLineNumbs:
-                        functionConsolePrint += "\n" + RED + str(lineCounter) + RESET + ": " + item    # print Red for lines containing vulns
+                        functionConsolePrint += "\n" + Colors['RED'] + str(lineCounter) + Colors['RESET'] + ": " + item    # print Colors['RED'] for lines containing vulns
                     else:
-                        functionConsolePrint += "\n" + YELLOW + str(lineCounter) + RESET + ": " + item
+                        functionConsolePrint += "\n" + Colors['YELLOW'] + str(lineCounter) + Colors['RESET'] + ": " + item
                 elif lineCounter == 1:
                     if lineCounter in semgrepLineNumbs:
-                        functionConsolePrint += RED + str(lineCounter) + RESET + ": " + item    # print Red for lines containing vulns
+                        functionConsolePrint += Colors['RED'] + str(lineCounter) + Colors['RESET'] + ": " + item    # print Colors['RED'] for lines containing vulns
                     else:
-                        functionConsolePrint += YELLOW + str(lineCounter) + RESET + ": " + item
+                        functionConsolePrint += Colors['YELLOW'] + str(lineCounter) + Colors['RESET'] + ": " + item
                 lineCounter+=1
 
-            if semgrepLineNumbs:  # Only return vuln findings
-                print(RED + "[+] Potential Vulnerability Found" + RESET)
+            if semgrepLineNumbs or self.aiToggle:  # Only return vuln findings or Analyze all with OpenAI if aiToggle is set
+                print(Colors['RED'] + "[+] Potential Vulnerability Found" + Colors['RESET'])
                 if self.aiToggle:   # if openAI enabled
                     aiAnalysis = self.openAI(function, semgrepAnalysis)  # openAI Analysis
                     table.add_row([functionConsolePrint, semgrepAnalysis, aiAnalysis])
                     if self.outputFile:
-                        with open(self.outputFile, 'w') as w:
-                            w.write(str(table))
+                        if tick == 0:
+                            fileStatus = 'w+'
+                        else:
+                            fileStatus = 'a+'
+                        with open(self.outputFile, fileStatus) as w:
+                            for color in Colors:
+                                semgrepAnalysis = semgrepAnalysis.replace(Colors[color], "")
+                                aiAnalysis = str(aiAnalysis).replace(Colors[color], "")
+                            w.write("[FUNCTION]: \n" + function + "\n\r")
+                            w.write("[SEMGREP ANALYSIS]: \n" + semgrepAnalysis + "\n\r")
+                            w.write("[AI ANALYSIS]: \n" + aiAnalysis + "\n")
+                            w.write("=" * 150 + "\n\r\n\r")
                 else:
                     table.add_row([functionConsolePrint, semgrepAnalysis, "AI Analysis Disabled"])
                     if self.outputFile:
-                        with open(self.outputFile, 'w') as w:
-                            w.write(str(table))
+                        if tick == 0:
+                            fileStatus = 'w+'
+                        else:
+                            fileStatus = 'a+'
+                        with open(self.outputFile, fileStatus) as w:
+                            for color in Colors:
+                                semgrepAnalysis = semgrepAnalysis.replace(Colors[color], "")
+                                aiAnalysis = str(aiAnalysis).replace(Colors[color], "")
+                            w.write("[FUNCTION]: \n" + function + "\n\r")
+                            w.write("[SEMGREP ANALYSIS]: \n" + semgrepAnalysis + "\n\r")
+                            w.write("[AI ANALYSIS]: \n" + aiAnalysis + "\n")
+                            w.write("=" * 150 + "\n\r\n\r")
+
+                tick+=1                
 
         print(table) # print analysis table
 
@@ -115,7 +141,7 @@ class Callisto():
         try:
             subprocess.run([args[0], args[1], args[2], args[3], args[4], args[5], args[6]], stdout=subprocess.PIPE, stderr=subprocess.PIPE)
             subprocess.run(["rm", "-r", self.ghidraPath + "/" + self.projectName + ".gpr", self.ghidraPath + "/" + self.projectName + ".rep"])    # Remove unnecessary project files to keep it lightweight
-            print(YELLOW + "[+] " + "Decompiler Ran Successfully" + RESET)
+            print(Colors['YELLOW'] + "[+] " + "Decompiler Ran Successfully" + Colors['RESET'])
         except Exception as err:
             print("Decompiler Error: " + str(err))
 
@@ -149,10 +175,14 @@ class Callisto():
                     self.aiToggle = True
                 elif sys.argv[tick] == "-o":    # Write output to file
                     self.outputFile = sys.argv[tick+1]
+                elif sys.argv[tick] == "-all":    # Write output to file
+                    self.allToggle = True
+                    print("[+] Configuration set to run ALL functions through OpenAI Analysis")
                 elif sys.argv[tick] == "-h":    # Help
                     print("Ex. python callisto.py -b /tmp/test.exe -ai"\
                           "\n -b <path> => path to binary you want to analyze\
-                          \n -ai => enable OpenAI analysis")
+                          \n -ai => enable OpenAI analysis\
+                          \n -all => analyze every function with OpenAI, regardless of Semgrep findings")
             except:
                 if self.binaryPath is None:
                     print("You must provide path to the binary you want to analyze. Ex. python callisto.py -b /tmp/test.exe -ai")
