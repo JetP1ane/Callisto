@@ -89,7 +89,7 @@ class Callisto():
                         functionConsolePrint += Colors['YELLOW'] + str(lineCounter) + Colors['RESET'] + ": " + item
                 lineCounter+=1
 
-            if semgrepLineNumbs or self.aiToggle:  # Only return vuln findings or Analyze all with OpenAI if aiToggle is set
+            if str(semgrepAnalysis) != '' or self.allToggle:  # Only return vuln findings or Analyze all with OpenAI if aiToggle is set
                 print(Colors['RED'] + "[+] Potential Vulnerability Found" + Colors['RESET'])
                 if self.aiToggle:   # if openAI enabled
                     aiAnalysis = self.openAI(function, semgrepAnalysis)  # openAI Analysis
