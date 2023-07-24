@@ -32,3 +32,13 @@ I owe Marco Ivaldi [@0xdea](https://github.com/0xdea) a huge thanks for his publ
 **Program Output Example:**\
 ![](callisto.png)
 
+**Tuning**
+
+When using OpenAI analysis you may wish to tune Semgrep to focus on higher priority issues on the initial run. By default semgrep will flag low severity issues which can result in heavy usage of your OpenAI key for similar issues and lead to rate limiting (depending on free vs paid accounts etc). You can tune semgrep behaviour by modifying sgrep/controller.py to implement severity flags which set a floor level on the analysis. For example, the below will only include High and Medium confidence level rules excluding Low (INFO). 
+
+`sGrepResults = subprocess.run(["semgrep", "--config=sgrep/semgrep-rules-c/c","--severity","ERROR","--severity","WARNING", "--json", "sgrep/semgrep.c"], stdout=subprocess.PIPE, stderr=subprocess.PIPE)`
+
+You can confirm the severity to confidence level rule mappings using the following command: 
+
+`grep -R severity sgrep/semgrep-rules-c`
+
